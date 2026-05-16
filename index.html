@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Weather Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .app-container {
+            background-color: #1e293b;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 26px;
+            color: #38bdf8;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        select {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #475569;
+            border-radius: 8px;
+            background-color: #334155;
+            color: white;
+            outline: none;
+            cursor: pointer;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: #38bdf8;
+            color: #0f172a;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #7dd3fc;
+        }
+
+        /* Weather display elements container */
+        .weather-display {
+            background-color: #334155;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+
+        .city-title {
+            font-size: 22px;
+            margin: 0 0 10px 0;
+            font-weight: bold;
+        }
+
+        .temp-text {
+            font-size: 54px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #f59e0b;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+            border-top: 1px solid #475569;
+            padding-top: 15px;
+        }
+
+        .metric-card {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .metric-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-top: 5px;
+        }
+
+        .loading-text {
+            color: #cbd5e1;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <h1>🌤️ Weather Dashboard</h1>
+        
+        <div class="search-box">
+            <!-- Dropdown selector mapping exact coordinate indices to cities -->
+            <select id="city-selector">
+                <option value="12.97,77.59">Bengaluru, India</option>
+                <option value="19.07,72.87">Mumbai, India</option>
+                <option value="28.61,77.20">New Delhi, India</option>
+                <option value="40.71,-74.00">New York, USA</option>
+                <option value="51.50,-0.12">London, UK</option>
+                <option value="35.67,139.65">Tokyo, Japan</option>
+            </select>
+            <button onclick="fetchLiveWeather()">Fetch</button>
+        </div>
+
+        <div id="weather-box" class="weather-display">
+            <h2 class="city-title" id="display-city">Bengaluru, India</h2>
+            <div class="temp-text" id="display-temp">--°C</div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    💧 Humidity
+                    <div class="metric-value" id="display-humidity">--%</div>
+                </div>
+                <div class="metric-card">
+                    💨 Wind Speed
+                    <div class="metric-value" id="display-wind">-- km/h</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Trigger initial data load when page mounts
+        fetchLiveWeather();
+
+        function fetchLiveWeather() {
+            const selector = document.getElementById('city-selector');
+            const selectedCityName = selector.options[selector.selectedIndex].text;
+            const coordinates = selector.value.split(',');
+            
+            const lat = coordinates[0];
+            const lon = coordinates[1];
+            
+            // UI Feedback during API call
+            document.getElementById('display-city').innerText = "Loading data...";
+            document.getElementById('display-temp').innerText = "--";
+
+            // Open-Meteo REST API endpoint request string definition
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m`;
+
+            // Asynchronous data request pipeline
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Network issue fetching data.");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Extract values directly from API response JSON structure
+                    const currentData = data.current;
+                    const temperature = Math.round(currentData.temperature_2m);
+                    const humidity = currentData.relative_humidity_2m;
+                    const windSpeed = currentData.wind_speed_10m;
+
+                    // Update UI text nodes dynamically
+                    document.getElementById('display-city').innerText = selectedCityName;
+                    document.getElementById('display-temp').innerText = `${temperature}°C`;
+                    document.getElementById('display-humidity').innerText = `${humidity}%`;
+                    document.getElementById('display-wind').innerText = `${windSpeed} km/h`;
+                })
+                .catch(error => {
+                    console.error("Fetch Error:", error);
+                    document.getElementById('display-city').innerText = "⚠️ Failed to load";
+                    document.getElementById('display-temp').innerText = "Error";
+                });
+        }
+    </script>
+</body>
+</html>
